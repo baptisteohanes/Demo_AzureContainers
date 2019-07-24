@@ -1,0 +1,9 @@
+FROM python:3
+
+RUN pip install azure-storage-blob
+
+COPY write.py /
+
+ENV storageaccount=jagcontainerstore storagecontainer=store storagekey=<StorageAccountKey>
+
+CMD ["python", "write.py"]

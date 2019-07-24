@@ -1,0 +1,35 @@
+#Connect to Azure and define context
+az login
+az account set --subscription 'JazureGrave Spoke Kubernetes'
+
+#Create Kubenet-enabled cluster
+#az aks create --location 'francecentral' --name 'JAG-AKS-CLUSTER' --node-resource-group 'JazureGrave-Spoke-AKS-Workers' --resource-group 'JazureGrave-Spoke-AKS-Cluster' --generate-ssh-keys --kubernetes-version '1.13.5' --dns-name-prefix 'jag-aks-cluster-dns' --node-vm-size 'Standard_B2s' --node-osdisk-size '32' --node-count '2' --enable-rbac --vnet-subnet-id '/subscriptions/3e97740a-8f17-450d-bde5-2a3a9307d897/resourceGroups/JazureGrave-Spoke-AKS-Network/providers/Microsoft.Network/virtualNetworks/JAG-SPK-AKS-VNET/subnets/ClusterSubnet' --dns-service-ip '10.4.240.10' --docker-bridge-address '172.17.0.1/16' --network-plugin kubenet --service-cidr '10.4.240.0/24' --workspace-resource-id '/subscriptions/3e97740a-8f17-450d-bde5-2a3a9307d897/resourceGroups/JazureGrave-Spoke-AKS-Mgmt/providers/Microsoft.OperationalInsights/workspaces/jag-aks-logs' --enable-addons 'monitoring' --service-principal 'b9c5d471-9d95-43b8-9133-7fd6e81c91c6' --client-secret '7S2rLr=E?tTJixa1diGC0dhjhZa?W_de'
+#Create CNI-enabled cluster
+#az aks create --location 'francecentral' --name 'JAG-AKS-CLUSTER' --node-resource-group 'JazureGrave-Spoke-AKS-Workers' --resource-group 'JazureGrave-Spoke-AKS-Cluster' --generate-ssh-keys --kubernetes-version '1.13.5' --dns-name-prefix 'jag-aks-cluster-dns' --node-vm-size 'Standard_B2s' --node-osdisk-size '32' --node-count '2' --enable-rbac --vnet-subnet-id '/subscriptions/3e97740a-8f17-450d-bde5-2a3a9307d897/resourceGroups/JazureGrave-Spoke-AKS-Network/providers/Microsoft.Network/virtualNetworks/JAG-SPK-AKS-VNET/subnets/ClusterSubnet' --dns-service-ip '10.4.240.10' --docker-bridge-address '172.17.0.1/16' --network-plugin azure --service-cidr '10.4.240.0/24' --workspace-resource-id '/subscriptions/3e97740a-8f17-450d-bde5-2a3a9307d897/resourceGroups/JazureGrave-Spoke-AKS-Mgmt/providers/Microsoft.OperationalInsights/workspaces/jag-aks-logs' --enable-addons 'monitoring' --service-principal 'b9c5d471-9d95-43b8-9133-7fd6e81c91c6' --client-secret '7S2rLr=E?tTJixa1diGC0dhjhZa?W_de'
+
+#Create VMSS-enabled cluster
+az aks create --location 'francecentral' --name 'JAG-AKS-CLUSTER' --node-resource-group 'JazureGrave-Spoke-AKS-Workers' --resource-group 'JazureGrave-Spoke-AKS-Cluster' --generate-ssh-keys --kubernetes-version '1.13.5' --dns-name-prefix 'jag-aks-cluster-dns' --node-vm-size 'Standard_B2s' --node-osdisk-size '32' --node-count '2' --enable-rbac --vnet-subnet-id '/subscriptions/3e97740a-8f17-450d-bde5-2a3a9307d897/resourceGroups/JazureGrave-Spoke-AKS-Network/providers/Microsoft.Network/virtualNetworks/JAG-SPK-AKS-VNET/subnets/ClusterSubnet' --dns-service-ip '10.4.240.10' --docker-bridge-address '172.17.0.1/16' --network-plugin azure --service-cidr '10.4.240.0/24' --workspace-resource-id '/subscriptions/3e97740a-8f17-450d-bde5-2a3a9307d897/resourceGroups/JazureGrave-Spoke-AKS-Mgmt/providers/Microsoft.OperationalInsights/workspaces/jag-aks-logs' --enable-addons 'monitoring' --service-principal 'b9c5d471-9d95-43b8-9133-7fd6e81c91c6' --client-secret '<ServicePrincipalSecret>' --enable-vmss
+
+#Initiate Helm and Tiller
+kubectl apply -f helm-rbac.yaml
+helm init --service-account tiller --node-selectors "beta.kubernetes.io/os"="linux"
+
+#Create dedicated namespace in the K8S cluster
+kubectl create namespace aksdemo
+
+#Deploy AKS helloworld application
+kubectl apply -f .\aks-helloworld-app.yaml -n aksdemo
+
+#Deploy internal load-balancer (optional)
+kubectl apply -f .\aks-helloworld-ilb.yaml -n aksdemo
+kubectl delete service aks-helloworld-ilb
+
+#Create secret for *.jazuregrave.fr certificate
+#Generate the .key et .crt file from certificate
+kubectl create secret tls aks-ingress-tls --namespace aksdemo --key aks-ingress-tls.key --cert aks-ingress-tls.crt
+
+#Deploy load-balanced public ingress infrastructure
+helm install stable/nginx-ingress --namespace aksdemo -f aks-helloworld-ilb-ingress.yaml --set controller.replicaCount=2 --set controller.nodeSelector."beta\.kubernetes\.io/os"=linux --set defaultBackend.nodeSelector."beta\.kubernetes\.io/os"=linux
+
+#Create route to AKS helloworld app
+kubectl apply -f .\aks-helloworld-route.yaml -n aksdemo

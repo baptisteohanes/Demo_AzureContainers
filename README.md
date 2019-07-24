@@ -1,2 +1,2 @@
-# Demo_AzureContainers
-Simple demo to show the value Azure containers technologies (ACI/AKS/ACR)
+# AzureContainerInstanceDemo
+Demo involving Azure Container Registry, Azure Container Instance, with Python code writing in Azure Storage Account
