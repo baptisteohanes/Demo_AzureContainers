@@ -1,6 +1,6 @@
 controller:
   service:
-    loadBalancerIP: 10.4.1.4
+    loadBalancerIP: 10.3.1.4
     annotations:
       service.beta.kubernetes.io/azure-load-balancer-internal: "true"
-      service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "ILBSubnet"
+      service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "FrontSubnet"
