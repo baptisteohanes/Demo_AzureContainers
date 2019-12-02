@@ -10,9 +10,9 @@ az account set --subscription 'JazureGrave Spoke Kubernetes'
 #Create VMSS-enabled cluster
 az aks create --location 'westeurope' --name 'aks-caas-we' --node-resource-group 'rg-aks-workers' --resource-group 'rg-aks-cluster' --generate-ssh-keys --kubernetes-version '1.14.8' --dns-name-prefix 'aks-caas-we-dns' --node-vm-size 'Standard_B2s' --node-osdisk-size '32' --node-count '2' --enable-rbac --vnet-subnet-id '/subscriptions/3e97740a-8f17-450d-bde5-2a3a9307d897/resourceGroups/rg-aks-network/providers/Microsoft.Network/virtualNetworks/vnet-aks-we/subnets/WorkerSubnet' --dns-service-ip '10.3.254.10' --docker-bridge-address '172.17.0.1/16' --network-plugin azure --service-cidr '10.3.254.0/24' --workspace-resource-id '/subscriptions/3e97740a-8f17-450d-bde5-2a3a9307d897/resourceGroups/rg-aks-mgmt/providers/Microsoft.OperationalInsights/workspaces/log-aks-mgmt' --enable-addons 'monitoring' --enable-vmss
 
-#Initiate Helm and Tiller
-kubectl apply -f helm-rbac.yaml
-helm init --service-account tiller --node-selectors "beta.kubernetes.io/os"="linux"
+#Initiate Helm and Tiller (only if version < 3.0.0.0)
+#kubectl apply -f helm-rbac.yaml
+#helm init --service-account tiller --node-selectors "beta.kubernetes.io/os"="linux"
 
 #Create dedicated namespace in the K8S cluster
 kubectl create namespace aksdemo
